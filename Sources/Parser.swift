@@ -3,12 +3,13 @@ import Foundation
 
 public class Parser{
     
-    private typealias MarkdownPointer = UnsafeMutablePointer<Void>
-    private typealias ExtractFunc = (MarkdownPointer, UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) -> Int32
+    fileprivate typealias MarkdownPointer = UnsafeMutableRawPointer
     
-    public class func toHtml(markdown: String) -> String{
+    fileprivate typealias ExtractFunc = (MarkdownPointer, UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) -> Int32
+    
+    public class func generateHtml(from markdown: String) -> String{
         
-        let mkPointer = mkd_string(markdown, Int32(markdown.lengthOfBytes(using: NSUTF8StringEncoding)), 0)
+        let mkPointer = mkd_string(markdown, Int32(markdown.lengthOfBytes(using: String.Encoding.utf8)), 0)
         
         defer{
             mkd_cleanup(mkPointer)
@@ -24,13 +25,13 @@ public class Parser{
 // MARK: - Private Method
 extension Parser{
     
-    private class func extractFromMarkdown(mkPointer: MarkdownPointer?, extract: ExtractFunc) -> String{
+    fileprivate class func extractFromMarkdown(mkPointer: MarkdownPointer?, extract: ExtractFunc) -> String{
         guard let pointer = mkPointer else{
             return ""
         }
         
-        var output: [UnsafeMutablePointer<Int8>?] = [UnsafeMutablePointer<Int8>(allocatingCapacity: 1)]
-        extract(pointer, &output)
+        var output: [UnsafeMutablePointer<Int8>?] = [UnsafeMutablePointer<Int8>.allocate(capacity: 1)]
+        _ = extract(pointer, &output)
         
         guard let html = output.first.flatMap({$0}) else{
             return ""
